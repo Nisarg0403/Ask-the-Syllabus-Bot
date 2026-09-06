@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+python-multipart
+sse-starlette
+pypdf>=4.0.0
+langchain>=0.2.0
+langchain-community>=0.2.0
+langchain-ollama>=0.1.0
+langchain-openai>=0.1.0
+faiss-cpu>=1.8.0
+sentence-transformers>=3.0.0
+python-dotenv>=1.0.1
+langchain-huggingface>=0.0.3

@@ -1,0 +1,112 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-primary: #cc785c;
+  --color-primary-hover: #b56247;
+  --color-background: #faf9f5;
+  --color-surface-container: #f5f3ec;
+  --color-surface-variant: #f3f0e9;
+  --color-outline-variant: #e6e4dd;
+  --color-on-surface: #191919;
+  --color-on-surface-variant: #5e5e5b;
+  --color-border: #e6e4dd;
+  --color-card: #ffffff;
+  --color-card-border: #e6e4dd;
+}
+
+.dark {
+  --color-primary: #d98a71;
+  --color-primary-hover: #e39d88;
+  --color-background: #222220;
+  --color-surface-container: #1b1b1a;
+  --color-surface-variant: #2d2d2b;
+  --color-outline-variant: #343431;
+  --color-on-surface: #f5f3ec;
+  --color-on-surface-variant: #a8a6a0;
+  --color-border: #343431;
+  --color-card: #1b1b1a;
+  --color-card-border: #343431;
+}
+
+body {
+  background-color: var(--color-background);
+  color: var(--color-on-surface);
+  overflow: hidden;
+  font-family: 'Inter', system-ui, sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Hairline dividers */
+.hairline-border {
+  border: 1px solid var(--color-outline-variant);
+}
+
+/* Custom Range Slider */
+input[type=range] {
+  -webkit-appearance: none;
+  width: 100%;
+  background: transparent;
+}
+
+input[type=range]:focus {
+  outline: none;
+}
+
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 12px;
+  width: 12px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  cursor: pointer;
+  margin-top: -4px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  transition: transform 0.1s ease;
+}
+
+input[type=range]::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+input[type=range]::-webkit-slider-runnable-track {
+  width: 100%;
+  height: 4px;
+  cursor: pointer;
+  background: var(--color-outline-variant);
+  border-radius: 2px;
+}
+
+/* Muted Scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-outline-variant);
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-primary);
+  opacity: 0.5;
+}
+
+/* Pulsing Dot for Live Status */
+@keyframes pulse-dot {
+  0% { transform: scale(0.95); opacity: 0.5; }
+  70% { transform: scale(1); opacity: 1; }
+  100% { transform: scale(0.95); opacity: 0.5; }
+}
+
+.animate-pulse-dot {
+  animation: pulse-dot 2.5s infinite ease-in-out;
+}
