@@ -1,112 +1,120 @@
-# Ask-the-Syllabus Bot 🎓
+# Ask-the-Syllabus Bot ⚡ (Production-Grade RAG System)
 
-A Retrieval-Augmented Generation (RAG) academic question-answering assistant. The application parses syllabus or lecture note PDFs, splits them into semantic chunks, creates local vector embeddings, indexes them using FAISS, and answers user questions grounded in the context of the files with clear citations.
+A full-stack, enterprise-ready Retrieval-Augmented Generation (RAG) platform designed to parse, index, and query complex academic syllabi and documents with strict grounding, precise page-level citations, and real-time streaming answers.
 
-## 🚀 Key Features
-- **Flexible LLM Backend**: Use **Ollama** locally (100% offline generation) or **OpenRouter** (cloud-based inference featuring Llama, Mistral, Qwen, Gemini, and Claude).
-- **Local Embedding Engine**: Generates embeddings locally using Hugging Face's `all-MiniLM-L6-v2` (sentence-transformers), requiring no embedding API keys.
-- **Accurate Source Citation**: Displays an expandable viewer showing the exact context snippet, source document name, and page number referenced for the answer.
-- **Strict Grounding**: Prompt engineering ensures the model doesn't hallucinate. It will state when it cannot find the answer in the provided documents.
-- **Adaptive UI**: Modern design built using Streamlit with rich CSS styling, custom title cards, and support for light/dark mode.
+Built with a high-performance **FastAPI** backend and a modern, reactive **React (Vite) + Tailwind CSS** frontend.
 
 ---
 
-## 🛠️ Architecture Workflow
+## ✨ Highlights & Key Features
+
+- ⚡ **Real-Time SSE Streaming**: Low-latency token streaming powered by FastAPI and Server-Sent Events (SSE).
+- 🎯 **Strict Grounding & Citation**: Verifiable response citations showing exact document sources, page numbers, and chunk previews to eliminate LLM hallucinations.
+- 🔀 **Hybrid LLM Provider Support**:
+  - **Local Execution**: Integrated with **Ollama** for 100% offline, privacy-first inference.
+  - **Cloud Execution**: Integrated with **OpenRouter** API (Llama 3, Claude 3, Qwen, Gemini, etc.).
+- 🧠 **Local Vector Embeddings**: Uses Hugging Face's `all-MiniLM-L6-v2` locally for zero API embedding costs and high accuracy.
+- 🎨 **Modern Minimalist UI**: Responsive Dark/Light theme, glassmorphic layout, real-time chunk & server diagnostics indicator.
+- ⚙️ **Configurable Hyperparameters**: Adjust chunk size, overlap, top-K retrieval count, and LLM temperature on the fly.
+
+---
+
+## 🏗️ System Architecture
 
 ```
-            +---------------------------+
-            |    Academic Documents     |
-            |     (Syllabus PDFs)       |
-            +-------------+-------------+
-                          |
-                          v
-            +-------------+-------------+
-            |  Text Extraction (pypdf)  |
-            +-------------+-------------+
-                          |
-                          v
-            +-------------+-------------+
-            | Recursive Character Split  |
-            +-------------+-------------+
-                          |
-                          v
-            +-------------+-------------+
-            |    Local Embeddings       |
-            |   (all-MiniLM-L6-v2)      |
-            +-------------+-------------+
-                          |
-                          v
-            +-------------+-------------+
-            |   Vector Database (FAISS)  |
-            +-------------+-------------+
-                          |
-              [Similarity Search]
-                          |
-                          v
-+--------------+    +-----+-----+    +-------------------+
-| User Query   |--->| Retrieve  |--->| Prompt + Context  |
-+--------------+    +-----------+    +---------+---------+
-                                               |
-                                               v
-                                     +---------+---------+
-                                     |    LLM Engine     |
-                                     | Ollama/OpenRouter |
-                                     +---------+---------+
-                                               |
-                                               v
-                                     +---------+---------+
-                                     |  Grounded Answer  |
-                                     |   & Citations     |
-                                     +-------------------+
+                                +-------------------+
+                                | Academic PDFs     |
+                                +---------+---------+
+                                          |
+                                          v
++-------------------+           +---------+---------+
+|  React (Vite) UI  |<-- (SSE) -|  FastAPI Backend  |
++---------+---------+           +---------+---------+
+          |                               |
+          | (REST Upload & Query)         v
+          +-------------------->+---------+---------+
+                                | Document Parser   |
+                                | (PyPDF / Splitter)|
+                                +---------+---------+
+                                          |
+                                          v
+                                +---------+---------+
+                                | Local Embeddings  |
+                                | (MiniLM-L6-v2)    |
+                                +---------+---------+
+                                          |
+                                          v
+                                +---------+---------+
+                                | FAISS Vector Store|
+                                +-------------------+
 ```
 
 ---
 
-## 💻 Setup Instructions
+## 🛠️ Tech Stack
 
-### 1. Prerequisite Installations
-- Ensure you have **Python 3.10+** installed.
-- (Optional) Start your local **Ollama** server if running local models.
+### Frontend
+- **Framework**: React 18 + Vite
+- **Styling**: Tailwind CSS + Custom CSS Design System
+- **Icons**: Lucide React / SVG Icons
 
-### 2. Dependency Installation
-Navigate to your workspace directory and install the required dependencies:
+### Backend
+- **Framework**: FastAPI (Uvicorn ASGI server)
+- **RAG Pipeline**: LangChain Ecosystem
+- **Vector Index**: FAISS (Facebook AI Similarity Search)
+- **Embeddings**: HuggingFace Sentence Transformers (`all-MiniLM-L6-v2`)
+- **LLM Integrations**: `langchain-ollama`, `langchain-openai` (via OpenRouter)
+
+---
+
+## 🚀 Getting Started
+
+### 1. Prerequisites
+- Python 3.10+
+- Node.js 18+ & npm
+- (Optional) [Ollama](https://ollama.com/) for local offline LLMs
+
+### 2. Backend Setup
 ```bash
-pip install -r requirements.txt
-```
+# Navigate to root directory
+cd GEN_AI
 
-### 3. Ollama Setup (Local LLM Mode)
-To run a local LLM, make sure the Ollama application is running on your computer.
-Pull a model (such as Llama 3 or Phi 3):
+# Install Python dependencies
+pip install -r backend/requirements.txt
+
+# Run the FastAPI backend server
+python backend/main.py
+```
+*The backend API server will run at `http://127.0.0.1:8000`.*
+
+### 3. Frontend Setup
 ```bash
-# Pull Llama 3 (8B)
-ollama pull llama3
+# Open a new terminal and navigate to frontend directory
+cd frontend
 
-# Or pull Phi 3 (3.8B)
-ollama pull phi3
+# Install Node modules
+npm install
+
+# Start the Vite development server
+npm run dev
 ```
-When you run the Streamlit app, it will auto-detect your local Ollama server and list the pulled models in the sidebar.
-
-### 4. OpenRouter Setup (Cloud LLM Mode)
-If you prefer running models via the cloud without using your local CPU/GPU:
-1. Go to [OpenRouter](https://openrouter.ai/) and create an account.
-2. Generate an API key.
-3. Select "OpenRouter" in the Streamlit app sidebar, enter your API key, and choose your preferred model (including free models like `meta-llama/llama-3-8b-instruct:free`).
+*The frontend application will be accessible at `http://localhost:5173`.*
 
 ---
 
-## 🏃 Running the Application
+## 🧭 Production RAG Roadmap
 
-Launch the Streamlit dashboard by running:
-```bash
-streamlit run app.py
-```
-This will open the application in your default web browser (typically at `http://localhost:8501`).
+This project is built to scale into a enterprise production RAG platform. Planned upgrades include:
+
+- [ ] **Asynchronous Task Queue**: Offload document parsing and vector embedding tasks using Redis & Celery to prevent API blocking.
+- [ ] **Managed Vector Database**: Migrate from local FAISS files to Qdrant/pgvector for real-time CRUD and multi-tenant scaling.
+- [ ] **Advanced Retrieval Strategies**:
+  - Hybrid Search (BM25 Keyword Search + Semantic Vector Search).
+  - Cross-Encoder Re-Ranking (Cohere / BGE-Reranker).
+- [ ] **Conversational Memory**: Stateful session management with Redis for multi-turn dialogue context.
+- [ ] **Advanced Document Parsing**: Integration with `unstructured.io` / LlamaParse for complex tabular and multi-column PDF layouts.
 
 ---
 
-## 🧪 Phase 1 Verification Guide
-1. **Model Connection**: Connect to Ollama or OpenRouter. Check the sidebar for the online server confirmation badge.
-2. **Document Upload**: Ingest a course syllabus PDF. Click the **"Process & Index Documents"** button. Check the success indicator displaying the page/chunk count.
-3. **Query Grounding**:
-   - Ask a question present in the document (e.g. *"What are the topics in Unit 1?"* or *"When is the final exam?"*). Verify that the system responds with a correct, structured answer and shows the correct source page.
-   - Ask an out-of-bounds question (e.g. *"How do I bake bread?"*). Verify that the system refuses to answer and states the information is missing from the document.
+## 📄 License
+Distributed under the MIT License. See `LICENSE` for more information.
