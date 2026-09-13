@@ -54,7 +54,7 @@ class TestDocumentVersioningAndJobs(unittest.TestCase):
     # 4. Same content under different filename
     def test_4_same_content_different_filename(self):
         checksum = "3333333333333333333333333333333333333333333333333333333333333333"
-        self.registry.add_version("docA.pdf", checksum, "0.5 MB", 1, 2)
+        self.registry.add_version("docA.pdf", checksum, "0.5 MB", 1, 2, "COMPLETED")
         found = self.registry.find_by_checksum(checksum)
         self.assertEqual(found["document_name"], "docA.pdf")
 

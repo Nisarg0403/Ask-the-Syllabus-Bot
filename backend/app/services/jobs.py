@@ -18,7 +18,10 @@ class IngestionJobManager:
 
     def __init__(self, jobs_file: str = JOBS_FILE):
         self.jobs_file = jobs_file
-        self._lock = threading.Lock()
+        # RLock allows the same thread to re-acquire without deadlocking,
+        # which is needed because _load_jobs and _save_jobs each acquire
+        # the lock, and callers like recover_stale_jobs hold it across both.
+        self._lock = threading.RLock()
         os.makedirs(os.path.dirname(self.jobs_file), exist_ok=True)
         self._init_jobs_file()
 
@@ -29,11 +32,8 @@ class IngestionJobManager:
     def _load_jobs(self) -> Dict[str, Dict[str, Any]]:
         with self._lock:
             if os.path.exists(self.jobs_file):
-                try:
-                    with open(self.jobs_file, "r") as f:
-                        return json.load(f)
-                except Exception:
-                    pass
+                with open(self.jobs_file, "r") as f:
+                    return json.load(f)
             return {}
 
     def _save_jobs(self, jobs: Dict[str, Dict[str, Any]]):

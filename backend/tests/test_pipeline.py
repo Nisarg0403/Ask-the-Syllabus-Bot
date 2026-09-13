@@ -1,5 +1,5 @@
 import pytest
-from langchain.schema import Document
+from langchain_core.documents import Document
 from app.rag.bm25 import BM25Index, build_bm25_index
 from app.rag.rrf import reciprocal_rank_fusion
 from app.rag.reranker import get_reranker

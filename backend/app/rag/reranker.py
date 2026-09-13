@@ -1,5 +1,5 @@
 import os
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict, Any, Optional
 from langchain_core.documents import Document
 
 DEFAULT_EVIDENCE_THRESHOLD = float(os.getenv("EVIDENCE_THRESHOLD", "0.25"))

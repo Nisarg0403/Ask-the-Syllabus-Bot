@@ -272,4 +272,4 @@ def save_evaluation_dataset(items: List[EvaluationItem], dataset_path: Optional[
     target_path = dataset_path or DATASET_FILE
     os.makedirs(os.path.dirname(target_path), exist_ok=True)
     with open(target_path, "w") as f:
-        json.dump([item.dict() for item in items], f, indent=4)
+        json.dump([item.model_dump() for item in items], f, indent=4)
