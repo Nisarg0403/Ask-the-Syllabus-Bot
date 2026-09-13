@@ -38,6 +38,7 @@ frontend/.oxlintrc.json
 data/
 storage/
 scratch/
+backend/app/evaluation/results/*.json
 
 # Local databases and vector files
 *.db

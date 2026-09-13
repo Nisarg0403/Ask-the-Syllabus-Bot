@@ -1,7 +1,7 @@
 import os
 import pickle
 import re
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 from rank_bm25 import BM25Okapi
 from langchain_core.documents import Document
 from app.core.config import STORAGE_DIR
@@ -15,10 +15,31 @@ def tokenize_text(text: str) -> List[str]:
     return re.findall(r'\b\w+\b', text.lower())
 
 class BM25Index:
-    def __init__(self, corpus: List[Document] = None):
+    def __init__(self, corpus: Optional[List[Document]] = None):
         self.corpus: List[Document] = corpus or []
         self.tokenized_corpus = [tokenize_text(doc.page_content) for doc in self.corpus]
         self.bm25 = BM25Okapi(self.tokenized_corpus) if self.tokenized_corpus else None
+
+    @property
+    def documents(self) -> List[Document]:
+        """Alias for corpus to support .documents attribute access."""
+        return self.corpus
+
+    def clear(self):
+        """Clear all documents and reset the BM25 index."""
+        self.corpus = []
+        self.tokenized_corpus = []
+        self.bm25 = None
+        self.save()
+
+    def add_documents(self, documents: List[Document]):
+        """Add new document chunks to the BM25 index, rebuild the model, and save to disk."""
+        if not documents:
+            return
+        self.corpus.extend(documents)
+        self.tokenized_corpus = [tokenize_text(doc.page_content) for doc in self.corpus]
+        self.bm25 = BM25Okapi(self.tokenized_corpus) if self.tokenized_corpus else None
+        self.save()
 
     def search(self, query: str, top_k: int = 10) -> List[Tuple[Document, float]]:
         """Search BM25 index and return top_k documents with scores."""

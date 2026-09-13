@@ -89,6 +89,19 @@ class TestDocumentVersioningAndJobs(unittest.TestCase):
         invalid = self.manifest.validate("incompatible-model-v1", 768)
         self.assertFalse(invalid)
 
+    def test_manifest_update(self):
+        data = self.manifest.update(
+            num_vectors=15,
+            num_bm25_docs=15,
+            document_ids=["doc_123"],
+            version_ids=["ver_456"],
+            checksums=["abc123hash"]
+        )
+        self.assertEqual(data["num_vectors"], 15)
+        self.assertEqual(data["num_bm25_documents"], 15)
+        self.assertEqual(data["active_checksums"].get("doc_123"), "abc123hash")
+        self.assertIn("ver_456", data["indexed_version_ids"])
+
     # 9 & 10. Incremental ingestion and existing version skip
     def test_9_10_incremental_ingestion_and_skip(self):
         self.registry.add_version("bio.pdf", "bio_hash", "1 MB", 2, 4, "COMPLETED")
@@ -113,6 +126,11 @@ class TestDocumentVersioningAndJobs(unittest.TestCase):
         comp = self.job_manager.update_job(j_id, "COMPLETED", progress=1.0)
         self.assertIsNotNone(comp, f"update_job returned None for job_id {j_id}")
         self.assertEqual(comp["status"], "COMPLETED")
+
+        # Test update_status alias
+        alias_res = self.job_manager.update_status(j_id, "PROCESSING", progress=0.8)
+        self.assertIsNotNone(alias_res)
+        self.assertEqual(alias_res["status"], "PROCESSING")
 
     # 13 & 14. FAILED job and exception handling
     def test_13_14_failed_job_and_error_handling(self):

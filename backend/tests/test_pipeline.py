@@ -20,6 +20,35 @@ def test_bm25_indexing_and_search():
     assert "neural networks" in top_doc.page_content.lower()
     assert score > 0.0
 
+def test_bm25_add_documents():
+    sample_docs = [
+        Document(page_content="Initial document about database design and SQL queries.", metadata={"source": "db.pdf", "page": 1}),
+        Document(page_content="Second document detailing web servers and network protocols.", metadata={"source": "net.pdf", "page": 1}),
+    ]
+    bm25_index = build_bm25_index(sample_docs)
+    assert len(bm25_index.documents) == 2
+
+    new_docs = [
+        Document(page_content="Additional document about quantum computing and qubits.", metadata={"source": "quantum.pdf", "page": 2})
+    ]
+    bm25_index.add_documents(new_docs)
+    assert len(bm25_index.documents) == 3
+
+    results = bm25_index.search("quantum computing", top_k=1)
+    assert len(results) == 1
+    assert "qubits" in results[0][0].page_content
+
+def test_bm25_clear():
+    sample_docs = [
+        Document(page_content="Test document for clearing.", metadata={"source": "test.pdf", "page": 1}),
+    ]
+    bm25_index = build_bm25_index(sample_docs)
+    assert len(bm25_index.documents) == 1
+    bm25_index.clear()
+    assert len(bm25_index.documents) == 0
+    assert bm25_index.bm25 is None
+
+
 def test_reciprocal_rank_fusion():
     doc1 = Document(page_content="Backpropagation algorithm derivation", metadata={"source": "a.pdf", "page": 1})
     doc2 = Document(page_content="Gradient descent optimization", metadata={"source": "b.pdf", "page": 2})

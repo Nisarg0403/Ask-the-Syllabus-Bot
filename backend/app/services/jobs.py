@@ -107,6 +107,18 @@ class IngestionJobManager:
         self._save_jobs(jobs)
         return job
 
+    def update_status(
+        self,
+        job_id: str,
+        status: str,
+        progress: Optional[float] = None,
+        error_message: Optional[str] = None
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Alias for update_job to maintain API compatibility.
+        """
+        return self.update_job(job_id=job_id, status=status, progress=progress, error_message=error_message)
+
     def get_job(self, job_id: str) -> Optional[Dict[str, Any]]:
         """
         Gets current job info by job_id.

@@ -55,6 +55,67 @@ class IndexManifest:
             json.dump(manifest_data, f, indent=4)
         return manifest_data
 
+    def update(
+        self,
+        num_vectors: int,
+        num_bm25_docs: int,
+        document_ids: Optional[List[str]] = None,
+        version_ids: Optional[List[str]] = None,
+        checksums: Optional[List[str]] = None,
+        active_checksums: Optional[Dict[str, str]] = None,
+        indexed_version_ids: Optional[List[str]] = None,
+        **kwargs
+    ) -> Dict[str, Any]:
+        """
+        Updates an existing manifest (or creates a new one) with new vector counts,
+        checksums, and version tracking metadata.
+        """
+        data = self.load() or {
+            "schema_version": "1.0",
+            "embedding_model": EMBEDDING_MODEL_NAME,
+            "embedding_dimension": 384,
+            "active_checksums": {},
+            "indexed_version_ids": [],
+            "chunking_config": {
+                "chunk_size": 1000,
+                "chunk_overlap": 200
+            },
+            "status": "VALID"
+        }
+
+        data["num_vectors"] = num_vectors
+        data["num_bm25_documents"] = num_bm25_docs
+        data["updated_at"] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+        data["status"] = "VALID"
+
+        if active_checksums:
+            if "active_checksums" not in data or not isinstance(data["active_checksums"], dict):
+                data["active_checksums"] = {}
+            data["active_checksums"].update(active_checksums)
+
+        if checksums and document_ids:
+            if "active_checksums" not in data or not isinstance(data["active_checksums"], dict):
+                data["active_checksums"] = {}
+            for doc_id, chk in zip(document_ids, checksums):
+                data["active_checksums"][doc_id] = chk
+
+        v_ids = indexed_version_ids or version_ids
+        if v_ids:
+            if "indexed_version_ids" not in data or not isinstance(data["indexed_version_ids"], list):
+                data["indexed_version_ids"] = []
+            for vid in v_ids:
+                if vid not in data["indexed_version_ids"]:
+                    data["indexed_version_ids"].append(vid)
+
+        dir_name = os.path.dirname(self.manifest_path)
+        if dir_name:
+            os.makedirs(dir_name, exist_ok=True)
+
+        with open(self.manifest_path, "w") as f:
+            json.dump(data, f, indent=4)
+
+        return data
+
     def validate(
         self,
         expected_model: str = EMBEDDING_MODEL_NAME,

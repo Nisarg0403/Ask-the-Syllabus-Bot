@@ -6,7 +6,7 @@ import json
 import hashlib
 import datetime
 import re
-from typing import List, Dict, Tuple, Optional, Union
+from typing import Any, List, Dict, Tuple, Optional, Union
 from pypdf import PdfReader
 from langchain_core.documents import Document
 from langchain_text_splitters import RecursiveCharacterTextSplitter
@@ -294,7 +294,7 @@ async def process_background_ingestion(
 ):
     """Background task wrapper managing job state transitions & errors."""
     job_mgr = job_manager or get_job_manager()
-    job_mgr.update_status(job_id, "PROCESSING", progress=0.2)
+    job_mgr.update_job(job_id, "PROCESSING", progress=0.2)
     log_job_event(job_id, document_name, "PROCESSING")
 
     t0 = time.time()
@@ -310,12 +310,12 @@ async def process_background_ingestion(
             job_id=job_id
         )
         duration_ms = (time.time() - t0) * 1000.0
-        job_mgr.update_status(job_id, "COMPLETED", progress=1.0)
+        job_mgr.update_job(job_id, "COMPLETED", progress=1.0)
         log_job_event(job_id, document_name, "COMPLETED", duration_ms=duration_ms)
     except Exception as e:
         duration_ms = (time.time() - t0) * 1000.0
         err_msg = str(e)
-        job_mgr.update_status(job_id, "FAILED", error_message=err_msg)
+        job_mgr.update_job(job_id, "FAILED", error_message=err_msg)
         log_job_event(job_id, document_name, "FAILED", duration_ms=duration_ms, error=err_msg)
         log_error_event(f"background_job_{job_id}", e)
 
