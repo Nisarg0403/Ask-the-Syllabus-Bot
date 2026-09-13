@@ -40,7 +40,7 @@ async def upload_document(
     chunk_overlap: int = Form(200)
 ):
     """Upload a syllabus PDF file, save it to disk, and trigger re-indexing."""
-    if not file.filename.lower().endswith(".pdf"):
+    if not file.filename or not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
     file_path = os.path.join(DATA_DIR, file.filename)
@@ -50,9 +50,7 @@ async def upload_document(
             shutil.copyfileobj(file.file, buffer)
 
         file_size_bytes = os.path.getsize(file_path)
-        file_size_mb = round(file_size_bytes / (1024 * 1024), 2)
-        if file_size_mb == 0.0:
-            file_size_mb = 0.01
+        file_size_mb = max(round(file_size_bytes / (1024 * 1024), 2), 0.01)
 
         metadata = load_metadata()
         metadata[file.filename] = {
@@ -78,13 +76,14 @@ async def upload_document(
 async def get_documents():
     """List all currently indexed syllabus files and their metadata."""
     metadata = load_metadata()
-    docs_list = []
-    for filename, info in metadata.items():
-        docs_list.append({
+    docs_list = [
+        {
             "filename": filename,
             "size": info.get("size", "Unknown size"),
             "indexed_at": info.get("indexed_at", "N/A")
-        })
+        }
+        for filename, info in metadata.items()
+    ]
     return {"documents": docs_list}
 
 @router.delete("/documents/{doc_name}")
@@ -141,20 +140,8 @@ async def get_status():
     }
 
 @router.post("/query")
-async def query_syllabus(payload: dict):
+async def query_syllabus(payload: QueryRequest):
     """Streams a RAG-based answer for a query using Server-Sent Events (SSE)."""
-    query = payload.get("query")
-    provider = payload.get("provider", "Ollama")
-    model = payload.get("model")
-    api_key = payload.get("api_key")
-    k = payload.get("k", 4)
-    temperature = payload.get("temperature", 0.2)
-
-    if not query:
-        raise HTTPException(status_code=400, detail="Query string is required.")
-    if not model:
-        raise HTTPException(status_code=400, detail="Model name is required.")
-
     db = load_vector_store()
 
     async def event_generator():
@@ -166,15 +153,16 @@ async def query_syllabus(payload: dict):
             yield {"event": "done", "data": ""}
             return
 
-        retrieved_docs = retrieve_context(query, db, k=k)
+        retrieved_docs = retrieve_context(payload.query, db, k=payload.k)
 
-        sources = []
-        for doc in retrieved_docs:
-            sources.append({
+        sources = [
+            {
                 "source": doc.metadata.get("source", "Unknown Source"),
                 "page": doc.metadata.get("page", "N/A"),
                 "content": doc.page_content
-            })
+            }
+            for doc in retrieved_docs
+        ]
 
         yield {
             "event": "sources",
@@ -183,12 +171,12 @@ async def query_syllabus(payload: dict):
 
         try:
             generator = stream_answer(
-                query=query,
+                query=payload.query,
                 retrieved_docs=retrieved_docs,
-                llm_provider=provider,
-                model_name=model,
-                api_key=api_key,
-                temperature=temperature
+                llm_provider=payload.provider,
+                model_name=payload.model,
+                api_key=payload.api_key,
+                temperature=payload.temperature
             )
             for token in generator:
                 if token:

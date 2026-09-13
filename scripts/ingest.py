@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
+import io
 import os
 import sys
 import argparse
 
 # Force UTF-8 encoding for standard output on Windows consoles
-if sys.platform == "win32":
+if sys.platform == "win32" and isinstance(sys.stdout, io.TextIOWrapper):
     sys.stdout.reconfigure(encoding='utf-8')
 
 # Add backend directory to sys.path to allow app imports
