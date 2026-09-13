@@ -41,9 +41,8 @@ storage/indexed_documents.json
 data/documents/*
 !data/documents/.gitkeep
 
-# IDEs & System Files
-.vscode/
-.idea/
-.DS_Store
-Thumbs.db
-*.log
+# Scratch & Local Databases
+scratch/
+*.db
+storage/*.db
+backend/data/*.db

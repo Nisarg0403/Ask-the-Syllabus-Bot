@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, ChevronRight, CheckCircle2, AlertCircle, UploadCloud } from "lucide-react";
+import { FileText, ChevronRight, CheckCircle2, AlertCircle, UploadCloud, Sparkles, Loader2 } from "lucide-react";
 import { renderMarkdown } from "../utils/markdown";
 import ChatInput from "./ChatInput";
 
@@ -16,6 +16,10 @@ export default function ChatSection({
   indexedDocsCount,
   openKnowledgeBase
 }) {
+  React.useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, streaming]);
+
   return (
     <section className="w-full h-full bg-background flex flex-col relative">
       
@@ -85,22 +89,45 @@ export default function ChatSection({
                     </div>
                   ) : (
                     <div className="w-full">
-                      {msg.text ? (
-                        <div 
-                          className="prose prose-slate dark:prose-invert max-w-none text-[15px] font-serif text-on-surface leading-relaxed"
-                          dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text) }}
-                        />
-                      ) : (
-                        <div className="flex gap-1.5 py-3 px-1">
-                          <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
-                          <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
-                          <div className="w-2 h-2 bg-primary/60 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                      {/* Thinking Loader dots when streaming starts before first token */}
+                      {msg.isStreaming && !msg.text && (
+                        <div className="flex items-center gap-3 py-3 px-4 bg-surface-container/60 rounded-xl border border-border text-on-surface-variant text-sm">
+                          <Loader2 className="w-4 h-4 text-primary animate-spin" />
+                          <span className="font-medium text-xs text-on-surface-variant">Thinking and retrieving context...</span>
+                          <div className="flex gap-1 items-center ml-2">
+                            <div className="w-1.5 h-1.5 bg-primary/80 rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                            <div className="w-1.5 h-1.5 bg-primary/80 rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                            <div className="w-1.5 h-1.5 bg-primary/80 rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                          </div>
                         </div>
                       )}
 
-                      {/* Expandable RAG Details / Citations */}
-                      {msg.sources && msg.sources.length > 0 && (
-                        <details className="mt-5 group bg-surface-container rounded-xl border border-border overflow-hidden shadow-sm">
+                      {/* Rendered Text Response */}
+                      {msg.text && (
+                        <div>
+                          <div 
+                            className="prose prose-slate dark:prose-invert max-w-none text-[15px] font-serif text-on-surface leading-relaxed"
+                            dangerouslySetInnerHTML={{ __html: renderMarkdown(msg.text) }}
+                          />
+                          
+                          {/* Real-time typing / streaming indicator while answering */}
+                          {msg.isStreaming && (
+                            <div className="flex items-center gap-2 mt-3 py-1 text-xs text-primary font-medium">
+                              <span className="h-2 w-2 rounded-full bg-primary animate-ping"></span>
+                              <span>Generating answer...</span>
+                              <div className="flex gap-1 items-center ml-1">
+                                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "0ms" }}></div>
+                                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "150ms" }}></div>
+                                <div className="w-1.5 h-1.5 bg-primary rounded-full animate-bounce" style={{ animationDelay: "300ms" }}></div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Expandable RAG Details / Citations - STRICTLY DISPLAYED AFTER COMPLETION OF RESULT */}
+                      {!msg.isStreaming && !msg.isError && msg.sources && msg.sources.length > 0 && (
+                        <details className="mt-5 group bg-surface-container rounded-xl border border-border overflow-hidden shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
                           <summary className="px-4 py-2.5 text-xs font-semibold text-on-surface-variant cursor-pointer flex items-center justify-between hover:bg-surface-variant transition-colors outline-none">
                             <div className="flex items-center gap-2">
                               <CheckCircle2 className="w-4 h-4 text-green-500" />
@@ -139,7 +166,7 @@ export default function ChatSection({
                         </details>
                       )}
                       
-                      {msg.text && (!msg.sources || msg.sources.length === 0) && (
+                      {!msg.isStreaming && !msg.isError && msg.text && (!msg.sources || msg.sources.length === 0) && (
                         <div className="mt-4 flex items-start gap-2 p-3 bg-orange-500/10 border border-orange-500/20 rounded-xl max-w-sm">
                           <AlertCircle className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
                           <div>
@@ -168,6 +195,7 @@ export default function ChatSection({
         handleKeyPress={handleKeyPress}
         streaming={streaming}
         clickSuggestedPrompt={clickSuggestedPrompt}
+        hasMessages={messages.length > 0}
       />
 
     </section>

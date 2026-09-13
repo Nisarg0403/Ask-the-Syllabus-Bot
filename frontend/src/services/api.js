@@ -71,3 +71,9 @@ export async function querySyllabus(payload) {
     body: JSON.stringify(payload)
   });
 }
+
+export async function fetchEvaluationResults() {
+  const res = await fetch(`${API_BASE}/api/evaluation/results`);
+  if (!res.ok) throw new Error("Failed to fetch evaluation results");
+  return res.json();
+}

@@ -4,6 +4,7 @@ import Sidebar from "./components/Sidebar";
 import KnowledgeBase from "./components/KnowledgeBase";
 import ChatSection from "./components/ChatSection";
 import SettingsPanel from "./components/SettingsPanel";
+import EvaluationModal from "./components/EvaluationModal";
 import {
   fetchModels,
   fetchDocuments,
@@ -24,6 +25,7 @@ export default function App() {
   // UI States
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [showKnowledgeBase, setShowKnowledgeBase] = useState(false); // Toggle for mobile or specific view
+  const [showEvaluation, setShowEvaluation] = useState(false);
 
   // RAG Sliders states
   const [chunkSize, setChunkSize] = useState(1024);
@@ -181,7 +183,9 @@ export default function App() {
       text: "",
       sources: [],
       responseTime: "",
-      timeString: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+      timeString: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      isStreaming: true,
+      isError: false
     };
     setMessages(prev => [...prev, botMsgPlaceholder]);
 
@@ -237,7 +241,9 @@ export default function App() {
               setMessages(prev => {
                 const updated = [...prev];
                 const last = updated[updated.length - 1];
-                last.sources = activeSources;
+                if (last && last.sender === "bot") {
+                  last.sources = activeSources;
+                }
                 return updated;
               });
             } else if (currentEvent === "token") {
@@ -245,7 +251,9 @@ export default function App() {
               setMessages(prev => {
                 const updated = [...prev];
                 const last = updated[updated.length - 1];
-                last.text = activeText;
+                if (last && last.sender === "bot") {
+                  last.text = activeText;
+                }
                 return updated;
               });
             } else if (currentEvent === "error") {
@@ -254,7 +262,11 @@ export default function App() {
               setMessages(prev => {
                 const updated = [...prev];
                 const last = updated[updated.length - 1];
-                last.text = activeText;
+                if (last && last.sender === "bot") {
+                  last.text = activeText;
+                  last.isError = true;
+                  last.isStreaming = false;
+                }
                 return updated;
               });
             }
@@ -266,7 +278,10 @@ export default function App() {
       setMessages(prev => {
         const updated = [...prev];
         const last = updated[updated.length - 1];
-        last.responseTime = responseTime;
+        if (last && last.sender === "bot") {
+          last.responseTime = responseTime;
+          last.isStreaming = false;
+        }
         return updated;
       });
 
@@ -274,7 +289,11 @@ export default function App() {
       setMessages(prev => {
         const updated = [...prev];
         const last = updated[updated.length - 1];
-        last.text = `Could not get response. ${err.message}`;
+        if (last && last.sender === "bot") {
+          last.text = `Could not get response. ${err.message}`;
+          last.isError = true;
+          last.isStreaming = false;
+        }
         return updated;
       });
     } finally {
@@ -310,6 +329,7 @@ export default function App() {
         darkMode={darkMode}
         setDarkMode={setDarkMode}
         openSettings={() => setIsSettingsOpen(true)}
+        openEvaluation={() => setShowEvaluation(true)}
       />
       
       <main className="ml-[280px] w-[calc(100%-280px)] h-screen flex overflow-hidden">
@@ -337,6 +357,12 @@ export default function App() {
           uploadProgress={uploadProgress}
           indexedDocs={indexedDocs}
           handleDeleteDocument={handleDeleteDocument}
+        />
+      )}
+
+      {showEvaluation && (
+        <EvaluationModal
+          onClose={() => setShowEvaluation(false)}
         />
       )}
 

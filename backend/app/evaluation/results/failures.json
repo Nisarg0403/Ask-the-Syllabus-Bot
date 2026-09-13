@@ -1,0 +1,98 @@
+[
+    {
+        "question_id": "direct_06",
+        "category": "direct",
+        "failure_type": "false_abstention",
+        "query": "What is the required team size for the final year mini-project?",
+        "retrieved_documents": [
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf"
+        ],
+        "expected_documents": [
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf"
+        ],
+        "evidence_score": 0.0083,
+        "evidence_threshold": 0.25,
+        "explanation": "Query classified as false_abstention."
+    },
+    {
+        "question_id": "cross_doc_15",
+        "category": "cross_doc",
+        "failure_type": "false_abstention",
+        "query": "How do the practical AI project requirements in the implementation guide compare to IT services at Hyperlink Infosystem for item 15?",
+        "retrieved_documents": [
+            "68baa43bf03e81757019003.pdf",
+            "sample_syllabus.pdf",
+            "68baa43bf03e81757019003.pdf",
+            "sample_syllabus.pdf",
+            "68baa43bf03e81757019003.pdf"
+        ],
+        "expected_documents": [
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "sample_syllabus.pdf"
+        ],
+        "evidence_score": 0.247,
+        "evidence_threshold": 0.25,
+        "explanation": "Query classified as false_abstention."
+    },
+    {
+        "question_id": "paraphrased_03",
+        "category": "paraphrased",
+        "failure_type": "false_abstention",
+        "query": "How many students should be in each project group?",
+        "retrieved_documents": [
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "68baa43bf03e81757019003.pdf"
+        ],
+        "expected_documents": [
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf"
+        ],
+        "evidence_score": 0.0044,
+        "evidence_threshold": 0.25,
+        "explanation": "Query classified as false_abstention."
+    },
+    {
+        "question_id": "paraphrased_08",
+        "category": "paraphrased",
+        "failure_type": "false_abstention",
+        "query": "What is the total point value for Assignments in the course?",
+        "retrieved_documents": [
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf"
+        ],
+        "expected_documents": [
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf"
+        ],
+        "evidence_score": 0.0904,
+        "evidence_threshold": 0.25,
+        "explanation": "Query classified as false_abstention."
+    },
+    {
+        "question_id": "paraphrased_12",
+        "category": "paraphrased",
+        "failure_type": "false_abstention",
+        "query": "What is the total final grade out of 100 comprised of?",
+        "retrieved_documents": [
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf"
+        ],
+        "expected_documents": [
+            "1. Final GenAI_200PS_Implementation GUIDE (1).pdf"
+        ],
+        "evidence_score": 0.0007,
+        "evidence_threshold": 0.25,
+        "explanation": "Query classified as false_abstention."
+    }
+]

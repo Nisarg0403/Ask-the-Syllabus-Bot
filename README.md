@@ -1,6 +1,6 @@
 # Ask-the-Syllabus Bot ⚡ (Production-Grade RAG System)
 
-> A modular, production-oriented Retrieval-Augmented Generation (RAG) academic assistant for parsing, indexing, and querying course syllabi with strict grounding, precise page-level citations, and real-time streaming answers.
+> A modular, production-grade Retrieval-Augmented Generation (RAG) academic assistant for parsing, indexing, and querying course syllabi with strict grounding, SHA-256 document versioning, hybrid dense/sparse retrieval, cross-encoder reranking, evidence abstention, and precise page-level citations.
 
 ---
 
@@ -8,127 +8,63 @@
 
 Students and educators frequently spend valuable time searching through long, multi-page course syllabi, policy PDFs, and academic schedules to locate critical details (such as grading breakdowns, exam dates, office hours, and assignment policies). Traditional keyword searches fail when queries do not match exact wording. Standard Large Language Models (LLMs) often hallucinate policies or state incorrect information when ungrounded.
 
-**Ask-the-Syllabus Bot** solves this by embedding uploaded academic documents into a local vector index (FAISS), retrieving exact context passages, and synthesizing precise, grounded responses with verifiable page citations using local or cloud LLMs.
+**Ask-the-Syllabus Bot** solves this by storing uploaded academic documents with SHA-256 checksum versioning, embedding chunks into a hybrid FAISS & BM25 retrieval pipeline, ranking candidates with Reciprocal Rank Fusion (RRF) and FlashRank cross-encoder reranking, validating evidence thresholds, and synthesizing precise, grounded responses with verifiable citations using Qwen3 / Ollama.
 
 ---
 
 ## ✨ Key Features
 
 - ⚡ **Real-Time Token Streaming**: Server-Sent Events (SSE) stream responses instantaneously from LLMs.
-- 🎯 **Strict Grounding & Citation Accordion**: Every answer displays the exact source filename, page number, and text snippet used to generate it.
-- 🔀 **Dual LLM Execution Modes**:
-  - **Local & Private**: Native integration with **Ollama** (Qwen3 / Llama 3) for 100% offline, privacy-first inference.
-  - **Cloud Integration**: Compatible with **OpenRouter** API (Llama 3, Claude 3.5, Gemini 1.5, DeepSeek).
-- 🧠 **Zero Cost Local Vector Embeddings**: Uses Hugging Face's `all-MiniLM-L6-v2` locally for fast 384-dimensional vector indexing.
-- 🎛️ **On-the-Fly RAG Hyperparameter Tuning**: Dynamically adjust chunk size, overlap, top-$k$ document retrieval count, and temperature via the UI sidebar.
-- 🎨 **Modern Split-Pane UI**: Dark/Light mode theme, glassmorphic layout, drag-and-drop PDF dropzone, and real-time status diagnostics.
+- 🔀 **Hybrid Retrieval Pipeline**: FAISS dense vector search + BM25 sparse keyword search combined via Reciprocal Rank Fusion (RRF).
+- 🎯 **FlashRank Re-Ranking & Evidence Gate**: Cross-encoder reranking with configurable evidence thresholding (`0.25`) for hallucination-free abstention on out-of-scope queries.
+- 📜 **SHA-256 Checksum & Versioning Registry**: Persistent SQLite document registry tracking document identity, version increments, and duplicate prevention.
+- ⚡ **Background Ingestion & Job Manager**: In-memory job manager (`QUEUED` → `PROCESSING` → `COMPLETED` / `FAILED`) with automatic crash recovery.
+- 📊 **Index Manifest**: Persistent JSON index manifest storing embedding dimensions (384), vector counts, and model compatibility checks.
+- 🛡️ **Citation Verification Engine**: Validates every inline citation against actual retrieved document content before delivery.
+- 🔍 **Structured JSON Observability**: Request-ID (`X-Request-ID`) propagation, stage-by-stage telemetry, and secret masking.
 
 ---
 
 ## 🏗️ System Architecture
 
 ```
-                                +-------------------+
-                                | Academic PDFs     |
-                                +---------+---------+
-                                          |
-                                          v
-+-------------------+           +---------+---------+
-|  React (Vite) UI  |<-- (SSE) -|  FastAPI Backend  |
-+---------+---------+           +---------+---------+
-          |                               |
-          | (REST Upload & Query)         v
-          +-------------------->+---------+---------+
-                                | Document Parser   |
-                                | (PyPDF / Splitter)|
-                                +---------+---------+
-                                          |
-                                          v
-                                +---------+---------+
-                                | Local Embeddings  |
-                                | (MiniLM-L6-v2)    |
-                                +---------+---------+
-                                          |
-                                          v
-                                +---------+---------+
-                                | FAISS Vector Store|
-                                +-------------------+
+React (Vite) UI
+      │
+      ▼
+FastAPI Gateway (Request ID & CORS)
+      │
+      ▼
+Query Transformation (Normalization & Reference Resolution)
+      │
+      ├───► FAISS Dense Retrieval (all-MiniLM-L6-v2) ───┐
+      │                                                ├──► RRF Fusion ──► FlashRank Reranker ──► Evidence Gate
+      └───► BM25 Sparse Keyword Search ────────────────┘                                                │
+                                                                                                        ▼
+                                                                                            Qwen3 / Ollama Generator
+                                                                                                        │
+                                                                                                        ▼
+                                                                                           Citation Verifier & SSE Stream
 ```
-
-For full system architecture details, view [`docs/architecture.md`](docs/architecture.md).
 
 ---
 
-## 🔄 10-Stage RAG Pipeline
+## 📊 Benchmark Evaluation Results
 
-1. **Document Ingestion**: Upload academic PDFs via web UI or CLI.
-2. **Text Extraction**: Page-level parsing using `pypdf`.
-3. **Text Cleaning**: Whitespace normalization and header cleanup.
-4. **Recursive Chunking**: Splitting into overlapping character blocks (`chunk_size=1000`, `chunk_overlap=200`).
-5. **Vector Embedding**: Mapping chunks to 384-dim dense vectors (`all-MiniLM-L6-v2`).
-6. **FAISS Storage**: Persisting index locally in `storage/faiss/`.
-7. **Query Processing**: Vector similarity search for top-$k$ context chunks.
-8. **Context Assembly**: Constructing grounded prompts with metadata citations.
-9. **LLM Generation**: Streaming answers via Ollama (Qwen3) or OpenRouter API.
-10. **Citation Rendering**: Displaying grounded text snippets with page numbers.
+Evaluated against the **105-Question Academic Benchmark Dataset** (See [`version_2.md`](version_2.md) for full report & controlled experiment matrix):
 
-For detailed pipeline documentation, view [`docs/rag-pipeline.md`](docs/rag-pipeline.md).
-
----
-
-## 🛠️ Technology Stack
-
-- **Backend**: Python 3.10+, FastAPI, Uvicorn, Pydantic, SSE-Starlette
-- **RAG & ML Engine**: LangChain, FAISS (`faiss-cpu`), Hugging Face `sentence-transformers` (`all-MiniLM-L6-v2`), PyTorch, PyPDF
-- **Frontend**: React 18, Vite, Tailwind CSS, Lucide Icons
-- **Local LLM Infrastructure**: Ollama (Qwen3 / Llama 3)
-
----
-
-## 📂 Project Structure
-
-```
-ask-the-syllabus-bot/
-├── backend/
-│   ├── app/
-│   │   ├── api/routes.py         # REST & SSE API Endpoints
-│   │   ├── core/config.py        # Path & Model Configuration
-│   │   ├── models/schemas.py     # Pydantic Schemas
-│   │   ├── rag/                  # Embeddings, Ingestion & Retrieval Pipeline
-│   │   ├── services/llm.py       # Ollama & OpenRouter Factory
-│   │   └── main.py               # FastAPI App Entrypoint
-│   ├── tests/test_api.py         # FastAPI Integration Tests
-│   ├── requirements.txt
-│   └── README.md
-├── frontend/
-│   ├── src/
-│   │   ├── components/           # Header, Sidebar, KnowledgeBase, ChatSection
-│   │   ├── services/api.js       # Centralized API Client
-│   │   ├── utils/markdown.js     # Text Formatter Utility
-│   │   ├── App.jsx, main.jsx, index.css, App.css
-│   ├── package.json, vite.config.js, README.md
-├── data/
-│   ├── documents/                # Active Syllabus PDFs
-│   └── sample/                   # Reference Sample Syllabi
-├── storage/
-│   └── faiss/                    # Vector Index Storage
-├── scripts/
-│   ├── ingest.py                 # CLI Batch Ingestion Tool
-│   ├── rebuild_index.py          # Force Index Rebuild Tool
-│   └── evaluate.py               # Benchmark Evaluation Tool
-├── tests/
-│   ├── test_retrieval.py         # FAISS Vector Search Unit Tests
-│   └── test_rag.py               # Context Builder Unit Tests
-├── docs/
-│   ├── architecture.md
-│   ├── rag-pipeline.md
-│   ├── evaluation.md
-│   └── project-plan.md
-├── .env.example
-├── .gitignore
-├── LICENSE
-└── README.md
-```
+| Metric | Baseline | Version 2.0 Production |
+|---|---:|---:|
+| **Recall@1** | 0.00% | **67.50%** |
+| **Recall@3** | 0.00% | **96.88%** |
+| **Recall@5** | 0.00% | **99.38%** |
+| **Recall@10** | 0.00% | **99.38%** |
+| **Precision@5** | 0.00% | **81.50%** |
+| **MRR** | 0.00 | **0.8500** |
+| **nDCG@5** | 0.00 | **0.8866** |
+| **Abstention Accuracy** | 34.29% | **95.24%** |
+| **False Answer Rate on evaluation benchmark** | 0.00% | **0.00%** |
+| **False Abstention Rate** | 86.25% | **6.25%** |
+| **Mean End-to-End RAG Latency** | 31.8ms | **47.25ms** |
 
 ---
 
@@ -137,100 +73,44 @@ ask-the-syllabus-bot/
 ### 1. Prerequisites
 - **Python 3.10+**
 - **Node.js 18+ & npm**
-- **[Ollama](https://ollama.com/)** (Optional, for offline execution)
+- **[Ollama](https://ollama.com/)** (`ollama pull qwen3:8b`)
 
-### 2. Ollama & Qwen3 Setup (Local Execution)
-Install Ollama and pull the recommended model:
+### 2. Backend Setup
 ```bash
-ollama pull qwen2.5:7b
-# or
-ollama pull llama3:8b
-```
-
-### 3. Backend Setup
-```bash
-# Clone the repository
-git clone https://github.com/your-username/ask-the-syllabus-bot.git
-cd ask-the-syllabus-bot
-
 # Install Python dependencies
 pip install -r backend/requirements.txt
 
-# Start the FastAPI server
+# Run Unit Tests (72/72 passing)
+python -m unittest discover -s tests -p "test_*.py"
+
+# Start FastAPI backend
 python -m uvicorn backend.app.main:app --reload --port 8000
 ```
-*API interactive documentation will be live at `http://127.0.0.1:8000/docs`.*
+*API Swagger documentation available at `http://127.0.0.1:8000/docs`.*
 
-### 4. Frontend Setup
+### 3. Frontend Setup
 ```bash
-# Open a new terminal and navigate to frontend/
+# Navigate to frontend
 cd frontend
 
 # Install dependencies
 npm install
 
-# Start Vite development server
+# Start Vite dev server
 npm run dev
 ```
-*Web application will be accessible at `http://localhost:5173`.*
+*Web application available at `http://localhost:5173`.*
 
 ---
 
-## 💻 Batch CLI Ingestion & Benchmark Scripts
+## 🎬 Jury Demonstration Procedure
 
-### Ingest Documents via CLI
-Place PDF syllabus files inside `data/documents/` and run:
-```bash
-python scripts/ingest.py --chunk-size 1000 --chunk-overlap 200
-```
-
-### Rebuild Vector Index
-```bash
-python scripts/rebuild_index.py
-```
-
-### Run Benchmark Evaluation
-```bash
-python scripts/evaluate.py --k 4
-```
-
----
-
-## 🧪 Running Automated Tests
-
-Run the test suite across backend API endpoints and RAG retrieval pipelines:
-
-```bash
-# Run backend API tests
-python -m unittest discover -s backend/tests
-
-# Run RAG vector retrieval tests
-python -m unittest discover -s tests
-```
-
----
-
-## 📊 Evaluation & Grounding
-
-The system enforces strict grounding rules:
-1. Questions directly supported by uploaded syllabi receive detailed answers with page citations.
-2. Questions outside the uploaded context yield an explicit refusal: *"I cannot find the answer to this question in the provided documents."*
-
-For complete evaluation methodology and benchmarks, see [`docs/evaluation.md`](docs/evaluation.md).
-
----
-
-## 🚧 Limitations & Future Roadmap
-
-### Current Limitations
-- Supports text-based PDF extraction (`pypdf`); scanned image PDFs require an OCR pre-processing step.
-- Single-node FAISS index storage.
-
-### Planned Improvements
-- [ ] **OCR Support**: Integration with `Tesseract` / `Unstructured` for scanned PDFs.
-- [ ] **Hybrid Search**: Combining BM25 keyword matching with dense FAISS vector search.
-- [ ] **Cross-Encoder Re-Ranking**: Cohere / BGE-Reranker integration.
-- [ ] **Vector Database Migration**: Optional Qdrant / PgVector connector for enterprise scale.
+1. **Dashboard Load**: Open `http://localhost:5173/`. Verify status pill (`QWEN3:8B` online) and 0 console errors.
+2. **Document Upload**: Click **Upload PDF** in sidebar, drag and drop `1. Final GenAI_200PS_Implementation GUIDE (1).pdf`. Observe background job status (`QUEUED` → `PROCESSING` → `COMPLETED`).
+3. **Factual Grounded Query**: Ask: *"What are the tentative exam dates for the Generative AI Jury Examination?"* Observe real-time token stream and page 1 citation source drawer.
+4. **Multi-Chunk / Cross-Doc Query**: Upload `sample_syllabus.pdf`. Ask: *"Compare the jury marking breakdown in the implementation guide with the company details of Hyperlink Infosystem."* Verify dual-document citations.
+5. **Abstention Check**: Ask: *"What is the professor's personal bank account password?"* Observe evidence gate trigger: *"I couldn't find sufficient evidence in the uploaded documents to answer this question."*
+6. **Version History**: Re-upload modified version of `sample_syllabus.pdf`. Open Knowledge Base modal and view incremented `version_number` (v2).
 
 ---
 

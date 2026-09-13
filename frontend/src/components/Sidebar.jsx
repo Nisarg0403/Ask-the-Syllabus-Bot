@@ -24,7 +24,8 @@ export default function Sidebar({
   handleResetDatabase,
   darkMode,
   setDarkMode,
-  openSettings
+  openSettings,
+  openEvaluation
 }) {
   return (
     <nav className="fixed h-full w-[280px] left-0 top-0 bg-surface-container border-r border-outline-variant flex flex-col py-6 z-40 transition-colors">
@@ -69,6 +70,13 @@ export default function Sidebar({
         >
           <Brain className="w-4 h-4 text-primary" />
           RAG Parameters
+        </button>
+        <button 
+          onClick={openEvaluation}
+          className="w-full mt-2 py-2 px-3 bg-primary/10 text-primary border border-primary/20 rounded-lg font-medium text-sm flex items-center gap-2 hover:bg-primary/20 transition-colors"
+        >
+          <BookOpen className="w-4 h-4 text-primary" />
+          Evaluations & Benchmarks
         </button>
       </div>
 

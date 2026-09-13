@@ -1,0 +1,73 @@
+{
+    "timestamp": "2026-09-13T14:59:01",
+    "retrieval_comparison": {
+        "recall_at_1": {
+            "baseline": 0.0,
+            "final": 0.675
+        },
+        "recall_at_3": {
+            "baseline": 0.0,
+            "final": 0.9688
+        },
+        "recall_at_5": {
+            "baseline": 0.0,
+            "final": 0.9938
+        },
+        "recall_at_10": {
+            "baseline": 0.0,
+            "final": 0.9938
+        },
+        "precision_at_1": {
+            "baseline": 0.0,
+            "final": 0.7
+        },
+        "precision_at_3": {
+            "baseline": 0.0,
+            "final": 0.8
+        },
+        "precision_at_5": {
+            "baseline": 0.0,
+            "final": 0.815
+        },
+        "precision_at_10": {
+            "baseline": 0.0,
+            "final": 0.815
+        },
+        "mrr": {
+            "baseline": 0.0,
+            "final": 0.85
+        },
+        "ndcg_at_5": {
+            "baseline": 0.0,
+            "final": 2.2454
+        }
+    },
+    "abstention_comparison": {
+        "accuracy": {
+            "baseline": 0.3429,
+            "final": 0.9524
+        },
+        "precision": {
+            "baseline": 0.266,
+            "final": 0.8333
+        },
+        "recall": {
+            "baseline": 1.0,
+            "final": 1.0
+        },
+        "false_abstention_rate": {
+            "baseline": 0.8625,
+            "final": 0.0625
+        },
+        "false_answer_rate": {
+            "baseline": 0.0,
+            "final": 0.0
+        }
+    },
+    "latency_comparison_ms": {
+        "mean_total_ms": {
+            "baseline": 31.8552,
+            "final": 35.3479
+        }
+    }
+}

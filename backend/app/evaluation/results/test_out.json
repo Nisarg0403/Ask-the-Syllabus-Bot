@@ -1,0 +1,110 @@
+{
+    "timestamp": "2026-09-13T15:19:19",
+    "dataset_statistics": {
+        "total": 1,
+        "direct": 1,
+        "multi_chunk": 0,
+        "cross_doc": 0,
+        "paraphrased": 0,
+        "topic_specific": 0,
+        "out_of_scope": 0,
+        "adversarial": 0,
+        "ambiguous": 0,
+        "should_abstain_count": 0,
+        "supported_count": 1
+    },
+    "evidence_threshold": 0.25,
+    "retrieval_metrics": {
+        "recall_at_1": 0.0,
+        "recall_at_3": 0.0,
+        "recall_at_5": 0.0,
+        "recall_at_10": 0.0,
+        "precision_at_1": 0.0,
+        "precision_at_3": 0.0,
+        "precision_at_5": 0.0,
+        "precision_at_10": 0.0,
+        "mrr": 0.0,
+        "ndcg_at_5": 0.0
+    },
+    "abstention_metrics": {
+        "tp": 0.0,
+        "fp": 1.0,
+        "tn": 0.0,
+        "fn": 0.0,
+        "precision": 0.0,
+        "recall": 1.0,
+        "accuracy": 0.0,
+        "false_abstention_rate": 1.0,
+        "false_answer_rate": 0.0
+    },
+    "latency_metrics_ms": {
+        "mean_total_end_to_end_ms": 422.48,
+        "stage_breakdown_ms": {
+            "query_transformation": 0.02,
+            "dense_retrieval": 404.45,
+            "bm25_retrieval": 0.54,
+            "rrf_fusion": 0.09,
+            "reranking": 17.25,
+            "evidence_gate": 0.01,
+            "citation_verification": 0.07
+        }
+    },
+    "failure_classification_counts": {
+        "retrieval_failure": 0,
+        "ranking_failure": 0,
+        "false_abstention": 1,
+        "false_answer": 0,
+        "none": 0
+    },
+    "per_question_traces": [
+        {
+            "id": "sample_01",
+            "category": "direct",
+            "original_query": "What is topic 1?",
+            "rewritten_query": "What is topic 1?",
+            "expected_documents": [
+                "doc1.pdf"
+            ],
+            "expected_pages": [
+                1
+            ],
+            "should_abstain_ground_truth": false,
+            "retrieved_documents": [
+                "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+                "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+                "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+                "1. Final GenAI_200PS_Implementation GUIDE (1).pdf",
+                "1. Final GenAI_200PS_Implementation GUIDE (1).pdf"
+            ],
+            "retrieved_pages": [
+                1,
+                44,
+                45,
+                1,
+                39
+            ],
+            "reranker_scores": [
+                0.0675,
+                0.0108,
+                0.0107,
+                0.0101,
+                0.0058
+            ],
+            "evidence_score": 0.0675,
+            "evidence_threshold": 0.25,
+            "abstention_decision": true,
+            "citations_count": 5,
+            "failure_classification": "false_abstention",
+            "latency_ms": {
+                "query_transformation": 0.02,
+                "dense_retrieval": 404.45,
+                "bm25_retrieval": 0.54,
+                "rrf_fusion": 0.09,
+                "reranking": 17.25,
+                "evidence_gate": 0.01,
+                "citation_verification": 0.07,
+                "total_end_to_end": 422.48
+            }
+        }
+    ]
+}

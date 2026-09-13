@@ -8,6 +8,7 @@ class QueryRequest(BaseModel):
     api_key: Optional[str] = Field(default=None, description="OpenRouter API key if applicable")
     k: int = Field(default=4, ge=1, le=10, description="Top-k chunks to retrieve")
     temperature: float = Field(default=0.2, ge=0.0, le=1.0, description="LLM sampling temperature")
+    chat_history: Optional[List[dict]] = Field(default=None, description="Optional previous chat turn history for context rewriting")
 
 class DocumentInfo(BaseModel):
     filename: str
