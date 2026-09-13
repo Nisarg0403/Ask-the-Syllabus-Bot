@@ -3,42 +3,29 @@ import shutil
 import json
 import datetime
 import requests
-import uvicorn
-from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTasks
-from fastapi.middleware.cors import CORSMiddleware
+from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 from sse_starlette.sse import EventSourceResponse
-from typing import Optional
 
-from rag_pipeline import (
-    DOCS_DIR,
-    FAISS_DIR,
-    METADATA_FILE,
+from app.core.config import DATA_DIR, FAISS_DIR, METADATA_FILE, OLLAMA_BASE_URL
+from app.models.schemas import QueryRequest
+from app.rag.ingestion import (
     load_metadata,
     save_metadata,
-    rebuild_vector_store,
+    rebuild_vector_store
+)
+from app.rag.pipeline import (
     load_vector_store,
     retrieve_context,
     stream_answer
 )
 
-app = FastAPI(title="Ask-the-Syllabus Bot API")
+router = APIRouter(prefix="/api")
 
-# Enable CORS for frontend development server
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],  # During development, allow all origins. Can be restricted to localhost:5173 later
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
-
-@app.get("/api/models")
+@router.get("/models")
 async def get_models():
-    """
-    Get the list of active local models from Ollama.
-    """
+    """Get the list of active local models from Ollama."""
     try:
-        response = requests.get("http://127.0.0.1:11434/api/tags", timeout=2)
+        response = requests.get(f"{OLLAMA_BASE_URL}/api/tags", timeout=2)
         if response.status_code == 200:
             models_data = response.json().get("models", [])
             return {"online": True, "models": [m["name"] for m in models_data]}
@@ -46,32 +33,27 @@ async def get_models():
         pass
     return {"online": False, "models": []}
 
-@app.post("/api/upload")
+@router.post("/upload")
 async def upload_document(
     file: UploadFile = File(...),
     chunk_size: int = Form(1000),
     chunk_overlap: int = Form(200)
 ):
-    """
-    Upload a syllabus PDF file, save it to disk, and trigger re-indexing.
-    """
+    """Upload a syllabus PDF file, save it to disk, and trigger re-indexing."""
     if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are supported.")
 
-    file_path = os.path.join(DOCS_DIR, file.filename)
-    
+    file_path = os.path.join(DATA_DIR, file.filename)
+
     try:
-        # Save file contents
         with open(file_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-        
-        # Calculate file size
+
         file_size_bytes = os.path.getsize(file_path)
         file_size_mb = round(file_size_bytes / (1024 * 1024), 2)
         if file_size_mb == 0.0:
             file_size_mb = 0.01
 
-        # Update metadata JSON
         metadata = load_metadata()
         metadata[file.filename] = {
             "size": f"{file_size_mb} MB",
@@ -79,7 +61,6 @@ async def upload_document(
         }
         save_metadata(metadata)
 
-        # Rebuild vector store
         db, num_chunks = rebuild_vector_store(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
 
         return {
@@ -89,16 +70,13 @@ async def upload_document(
             "chunks": num_chunks
         }
     except Exception as e:
-        # Clean up file if save/indexing failed
         if os.path.exists(file_path):
             os.remove(file_path)
         raise HTTPException(status_code=500, detail=f"Error indexing document: {str(e)}")
 
-@app.get("/api/documents")
+@router.get("/documents")
 async def get_documents():
-    """
-    List all currently indexed syllabus files and their metadata.
-    """
+    """List all currently indexed syllabus files and their metadata."""
     metadata = load_metadata()
     docs_list = []
     for filename, info in metadata.items():
@@ -109,21 +87,16 @@ async def get_documents():
         })
     return {"documents": docs_list}
 
-@app.delete("/api/documents/{doc_name}")
+@router.delete("/documents/{doc_name}")
 async def delete_document(doc_name: str):
-    """
-    Delete a document from indexing database and rebuild index.
-    """
-    file_path = os.path.join(DOCS_DIR, doc_name)
+    """Delete a document from indexing database and rebuild index."""
+    file_path = os.path.join(DATA_DIR, doc_name)
     if not os.path.exists(file_path):
         raise HTTPException(status_code=404, detail="Document not found.")
 
     try:
         os.remove(file_path)
-        
-        # Rebuild database with remaining documents
         db, num_chunks = rebuild_vector_store()
-        
         return {
             "success": True,
             "message": f"Successfully deleted {doc_name}.",
@@ -132,22 +105,17 @@ async def delete_document(doc_name: str):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error rebuilding database: {str(e)}")
 
-@app.post("/api/reset")
+@router.post("/reset")
 async def reset_database():
-    """
-    Clear all documents, vector store index, and metadata.
-    """
+    """Clear all documents, vector store index, and metadata."""
     try:
-        # Clear docs directory
-        if os.path.exists(DOCS_DIR):
-            shutil.rmtree(DOCS_DIR)
-        os.makedirs(DOCS_DIR, exist_ok=True)
+        if os.path.exists(DATA_DIR):
+            shutil.rmtree(DATA_DIR)
+        os.makedirs(DATA_DIR, exist_ok=True)
 
-        # Clear FAISS index
         if os.path.exists(FAISS_DIR):
             shutil.rmtree(FAISS_DIR)
 
-        # Clear metadata file
         if os.path.exists(METADATA_FILE):
             os.remove(METADATA_FILE)
 
@@ -155,18 +123,16 @@ async def reset_database():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error resetting database: {str(e)}")
 
-@app.get("/api/status")
+@router.get("/status")
 async def get_status():
-    """
-    Return FAISS database status and index sizes.
-    """
-    vector_store_active = os.path.exists(FAISS_DIR)
+    """Return FAISS database status and index sizes."""
+    vector_store_active = os.path.exists(FAISS_DIR) and len(os.listdir(FAISS_DIR)) > 0
     db_size_bytes = 0
     if vector_store_active:
         for root, dirs, files in os.walk(FAISS_DIR):
             for f in files:
                 db_size_bytes += os.path.getsize(os.path.join(root, f))
-    
+
     db_size_mb = round(db_size_bytes / (1024 * 1024), 2)
     return {
         "active": vector_store_active,
@@ -174,22 +140,9 @@ async def get_status():
         "raw_size_bytes": db_size_bytes
     }
 
-class QueryPayload:
-    def __init__(self, query: str, provider: str, model: str, api_key: Optional[str] = None, chunk_size: int = 1024, chunk_overlap: int = 200, k: int = 4, temperature: float = 0.2):
-        self.query = query
-        self.provider = provider
-        self.model = model
-        self.api_key = api_key
-        self.chunk_size = chunk_size
-        self.chunk_overlap = chunk_overlap
-        self.k = k
-        self.temperature = temperature
-
-@app.post("/api/query")
+@router.post("/query")
 async def query_syllabus(payload: dict):
-    """
-    Streams a RAG-based answer for a query using Server-Sent Events (SSE).
-    """
+    """Streams a RAG-based answer for a query using Server-Sent Events (SSE)."""
     query = payload.get("query")
     provider = payload.get("provider", "Ollama")
     model = payload.get("model")
@@ -202,7 +155,6 @@ async def query_syllabus(payload: dict):
     if not model:
         raise HTTPException(status_code=400, detail="Model name is required.")
 
-    # Load vector store
     db = load_vector_store()
 
     async def event_generator():
@@ -214,10 +166,8 @@ async def query_syllabus(payload: dict):
             yield {"event": "done", "data": ""}
             return
 
-        # 1. Retrieve Chunks
         retrieved_docs = retrieve_context(query, db, k=k)
-        
-        # Format sources citation details
+
         sources = []
         for doc in retrieved_docs:
             sources.append({
@@ -225,14 +175,12 @@ async def query_syllabus(payload: dict):
                 "page": doc.metadata.get("page", "N/A"),
                 "content": doc.page_content
             })
-        
-        # Yield sources as the first SSE message
+
         yield {
             "event": "sources",
             "data": json.dumps(sources)
         }
 
-        # 2. Run LLM stream
         try:
             generator = stream_answer(
                 query=query,
@@ -253,14 +201,10 @@ async def query_syllabus(payload: dict):
                 "event": "error",
                 "data": json.dumps({"detail": f"Model stream error: {str(e)}"})
             }
-            
-        # Signal completion
+
         yield {
             "event": "done",
             "data": ""
         }
 
     return EventSourceResponse(event_generator())
-
-if __name__ == "__main__":
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
