@@ -56,6 +56,7 @@ class TestDocumentVersioningAndJobs(unittest.TestCase):
         checksum = "3333333333333333333333333333333333333333333333333333333333333333"
         self.registry.add_version("docA.pdf", checksum, "0.5 MB", 1, 2, "COMPLETED")
         found = self.registry.find_by_checksum(checksum)
+        self.assertIsNotNone(found, "find_by_checksum returned None for checksum")
         self.assertEqual(found["document_name"], "docA.pdf")
 
     # 5. Registry survives restart
@@ -106,9 +107,11 @@ class TestDocumentVersioningAndJobs(unittest.TestCase):
         j_id = job["job_id"]
         
         proc = self.job_manager.update_job(j_id, "PROCESSING", progress=0.5)
+        self.assertIsNotNone(proc, f"update_job returned None for job_id {j_id}")
         self.assertEqual(proc["status"], "PROCESSING")
 
         comp = self.job_manager.update_job(j_id, "COMPLETED", progress=1.0)
+        self.assertIsNotNone(comp, f"update_job returned None for job_id {j_id}")
         self.assertEqual(comp["status"], "COMPLETED")
 
     # 13 & 14. FAILED job and exception handling
@@ -116,6 +119,7 @@ class TestDocumentVersioningAndJobs(unittest.TestCase):
         job = self.job_manager.create_job("corrupt.pdf", "hash_bad")
         j_id = job["job_id"]
         failed = self.job_manager.update_job(j_id, "FAILED", error_message="PDF parsing failure")
+        self.assertIsNotNone(failed, f"update_job returned None for job_id {j_id}")
         self.assertEqual(failed["status"], "FAILED")
         self.assertEqual(failed["error_message"], "PDF parsing failure")
 
@@ -133,6 +137,7 @@ class TestDocumentVersioningAndJobs(unittest.TestCase):
         restarted_mgr = IngestionJobManager(jobs_file=self.jobs_path)
         restarted_mgr.recover_stale_jobs()
         recovered = restarted_mgr.get_job(job["job_id"])
+        self.assertIsNotNone(recovered, f"get_job returned None for job_id {job['job_id']}")
         self.assertEqual(recovered["status"], "FAILED")
         self.assertIn("ungracefully", recovered["error_message"])
 
@@ -147,6 +152,7 @@ class TestDocumentVersioningAndJobs(unittest.TestCase):
     def test_18_faiss_bm25_sync(self):
         self.manifest.save({"sync.pdf": "h1"}, num_vectors=10, num_bm25_docs=10)
         m = self.manifest.load()
+        self.assertIsNotNone(m, "Manifest file failed to load")
         self.assertEqual(m["num_vectors"], m["num_bm25_documents"])
 
     # 19. Reset behavior

@@ -48,7 +48,9 @@ class IndexManifest:
             },
             "status": "VALID"
         }
-        os.makedirs(os.path.dirname(self.manifest_path), exist_ok=True)
+        dir_name = os.path.dirname(self.manifest_path)
+        if dir_name:
+            os.makedirs(dir_name, exist_ok=True)
         with open(self.manifest_path, "w") as f:
             json.dump(manifest_data, f, indent=4)
         return manifest_data
@@ -79,7 +81,8 @@ class IndexManifest:
         data = self.load() or {}
         data["status"] = "INVALID"
         data["updated_at"] = datetime.datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
-        if os.path.exists(os.path.dirname(self.manifest_path)):
+        dir_name = os.path.dirname(self.manifest_path)
+        if not dir_name or os.path.exists(dir_name):
             with open(self.manifest_path, "w") as f:
                 json.dump(data, f, indent=4)
 

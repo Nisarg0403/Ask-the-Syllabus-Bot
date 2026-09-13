@@ -14,7 +14,9 @@ class DocumentRegistry:
 
     def __init__(self, db_path: str = DB_PATH):
         self.db_path = db_path
-        os.makedirs(os.path.dirname(self.db_path), exist_ok=True)
+        db_dir = os.path.dirname(self.db_path)
+        if db_dir:
+            os.makedirs(db_dir, exist_ok=True)
         self._init_tables()
 
     def _get_connection(self) -> sqlite3.Connection:

@@ -1,5 +1,5 @@
 {
-    "timestamp": "2026-09-13T15:19:19",
+    "timestamp": "2026-09-13T15:44:42",
     "dataset_statistics": {
         "total": 1,
         "direct": 1,
@@ -38,13 +38,13 @@
         "false_answer_rate": 0.0
     },
     "latency_metrics_ms": {
-        "mean_total_end_to_end_ms": 422.48,
+        "mean_total_end_to_end_ms": 46.27,
         "stage_breakdown_ms": {
-            "query_transformation": 0.02,
-            "dense_retrieval": 404.45,
-            "bm25_retrieval": 0.54,
-            "rrf_fusion": 0.09,
-            "reranking": 17.25,
+            "query_transformation": 0.01,
+            "dense_retrieval": 27.01,
+            "bm25_retrieval": 0.19,
+            "rrf_fusion": 0.06,
+            "reranking": 18.87,
             "evidence_gate": 0.01,
             "citation_verification": 0.07
         }
@@ -78,32 +78,32 @@
             ],
             "retrieved_pages": [
                 1,
-                44,
                 45,
+                44,
                 1,
-                39
+                25
             ],
             "reranker_scores": [
-                0.0675,
-                0.0108,
-                0.0107,
-                0.0101,
-                0.0058
+                0.0707,
+                0.0132,
+                0.0114,
+                0.0109,
+                0.0027
             ],
-            "evidence_score": 0.0675,
+            "evidence_score": 0.0707,
             "evidence_threshold": 0.25,
             "abstention_decision": true,
             "citations_count": 5,
             "failure_classification": "false_abstention",
             "latency_ms": {
-                "query_transformation": 0.02,
-                "dense_retrieval": 404.45,
-                "bm25_retrieval": 0.54,
-                "rrf_fusion": 0.09,
-                "reranking": 17.25,
+                "query_transformation": 0.01,
+                "dense_retrieval": 27.01,
+                "bm25_retrieval": 0.19,
+                "rrf_fusion": 0.06,
+                "reranking": 18.87,
                 "evidence_gate": 0.01,
                 "citation_verification": 0.07,
-                "total_end_to_end": 422.48
+                "total_end_to_end": 46.27
             }
         }
     ]

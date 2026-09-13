@@ -1,6 +1,7 @@
 # Environment files
 .env
-.env.local
+.env.*
+!.env.example
 
 # Python
 __pycache__/
@@ -30,19 +31,19 @@ wheels/
 node_modules/
 frontend/node_modules/
 frontend/dist/
+frontend/.vite/
 frontend/.oxlintrc.json
 
-# Generated Vector Data & Index Files
-storage/faiss/*
-!storage/faiss/.gitkeep
-storage/indexed_documents.json
-
-# User Uploaded Documents (Keep sample PDFs)
-data/documents/*
-!data/documents/.gitkeep
-
-# Scratch & Local Databases
+# Data, Storage, Scratch (PDFs, RAG vector indexes, runtime state)
+data/
+storage/
 scratch/
+
+# Local databases and vector files
 *.db
-storage/*.db
-backend/data/*.db
+*.sqlite
+*.faiss
+*.pkl
+
+# IDE / Machine specific settings
+.vscode/

@@ -22,7 +22,9 @@ class IngestionJobManager:
         # which is needed because _load_jobs and _save_jobs each acquire
         # the lock, and callers like recover_stale_jobs hold it across both.
         self._lock = threading.RLock()
-        os.makedirs(os.path.dirname(self.jobs_file), exist_ok=True)
+        jobs_dir = os.path.dirname(self.jobs_file)
+        if jobs_dir:
+            os.makedirs(jobs_dir, exist_ok=True)
         self._init_jobs_file()
 
     def _init_jobs_file(self):
