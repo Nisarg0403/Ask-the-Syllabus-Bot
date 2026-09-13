@@ -3,8 +3,8 @@ import Header from "./components/Header";
 import Sidebar from "./components/Sidebar";
 import KnowledgeBase from "./components/KnowledgeBase";
 import ChatSection from "./components/ChatSection";
+import SettingsPanel from "./components/SettingsPanel";
 import {
-  OPENROUTER_MODELS,
   fetchModels,
   fetchDocuments,
   fetchDbStatus,
@@ -16,13 +16,14 @@ import {
 
 export default function App() {
   // Global configuration states
-  const [llmProvider, setLlmProvider] = useState("Ollama");
   const [selectedModel, setSelectedModel] = useState("");
   const [localModels, setLocalModels] = useState([]);
   const [ollamaOnline, setOllamaOnline] = useState(false);
-  const [openRouterKey, setOpenRouterKey] = useState("");
-  const [customModel, setCustomModel] = useState("");
   const [darkMode, setDarkMode] = useState(false);
+
+  // UI States
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [showKnowledgeBase, setShowKnowledgeBase] = useState(false); // Toggle for mobile or specific view
 
   // RAG Sliders states
   const [chunkSize, setChunkSize] = useState(1024);
@@ -41,14 +42,7 @@ export default function App() {
   const [uploadProgress, setUploadProgress] = useState(0);
 
   // Chat states
-  const [messages, setMessages] = useState([
-    {
-      sender: "bot",
-      text: "Hello! I'm ready to answer questions about your loaded syllabi. Please upload PDF files in the Knowledge Base pane or make sure your database is ready.",
-      sources: [],
-      timeString: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    }
-  ]);
+  const [messages, setMessages] = useState([]);
   const [inputText, setInputText] = useState("");
   const [streaming, setStreaming] = useState(false);
 
@@ -85,12 +79,9 @@ export default function App() {
       if (data.online && data.models.length > 0) {
         const preferred = data.models.find(m => m.includes("qwen3") || m.includes("llama3"));
         setSelectedModel(preferred || data.models[0]);
-      } else {
-        setSelectedModel(OPENROUTER_MODELS[0]);
       }
     } catch (e) {
       setOllamaOnline(false);
-      setSelectedModel(OPENROUTER_MODELS[0]);
     }
   };
 
@@ -110,19 +101,6 @@ export default function App() {
       setDbSize(data.size);
     } catch (e) {
       console.error("Error loading DB status:", e);
-    }
-  };
-
-  const handleProviderChange = (provider) => {
-    setLlmProvider(provider);
-    if (provider === "Ollama") {
-      if (localModels.length > 0) {
-        setSelectedModel(localModels[0]);
-      } else {
-        setSelectedModel("llama3");
-      }
-    } else {
-      setSelectedModel(OPENROUTER_MODELS[0]);
     }
   };
 
@@ -178,14 +156,7 @@ export default function App() {
       await resetDatabase();
       loadDocuments();
       loadDbStatus();
-      setMessages([
-        {
-          sender: "bot",
-          text: "Database has been reset. Please upload syllabus PDFs to begin anew.",
-          sources: [],
-          timeString: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-        }
-      ]);
+      setMessages([]);
     } catch (e) {
       alert("Error resetting database.");
     }
@@ -217,12 +188,11 @@ export default function App() {
     const startTime = Date.now();
 
     try {
-      const finalModel = (llmProvider === "OpenRouter" && customModel) ? customModel : selectedModel;
       const res = await querySyllabus({
         query: text,
-        provider: llmProvider,
-        model: finalModel,
-        api_key: openRouterKey,
+        provider: "Ollama",
+        model: selectedModel,
+        api_key: "",
         k: docsToRetrieve,
         temperature: temperature
       });
@@ -326,47 +296,25 @@ export default function App() {
   };
 
   return (
-    <div className="flex h-screen w-full text-on-surface bg-background overflow-hidden relative">
-      <Header />
+    <div className="flex h-screen w-full text-on-surface bg-background overflow-hidden relative font-sans">
       <Sidebar 
         fileInputRef={fileInputRef}
         handleFileUpload={handleFileUpload}
-        llmProvider={llmProvider}
-        handleProviderChange={handleProviderChange}
         selectedModel={selectedModel}
         setSelectedModel={setSelectedModel}
         localModels={localModels}
         ollamaOnline={ollamaOnline}
-        openRouterKey={openRouterKey}
-        setOpenRouterKey={setOpenRouterKey}
-        customModel={customModel}
-        setCustomModel={setCustomModel}
-        chunkSize={chunkSize}
-        setChunkSize={setChunkSize}
-        chunkOverlap={chunkOverlap}
-        setChunkOverlap={setChunkOverlap}
-        docsToRetrieve={docsToRetrieve}
-        setDocsToRetrieve={setDocsToRetrieve}
-        temperature={temperature}
-        setTemperature={setTemperature}
         dbActive={dbActive}
         dbSize={dbSize}
         handleResetDatabase={handleResetDatabase}
         darkMode={darkMode}
         setDarkMode={setDarkMode}
+        openSettings={() => setIsSettingsOpen(true)}
       />
-      <main className="ml-[280px] mt-16 w-[calc(100%-280px)] h-[calc(100vh-64px)] flex overflow-hidden">
-        <KnowledgeBase 
-          fileInputRef={fileInputRef}
-          uploading={uploading}
-          uploadStatus={uploadStatus}
-          uploadProgress={uploadProgress}
-          indexedDocs={indexedDocs}
-          handleDeleteDocument={handleDeleteDocument}
-        />
+      
+      <main className="ml-[280px] w-[calc(100%-280px)] h-screen flex overflow-hidden">
         <ChatSection 
           messages={messages}
-          llmProvider={llmProvider}
           selectedModel={selectedModel}
           streaming={streaming}
           inputText={inputText}
@@ -375,8 +323,35 @@ export default function App() {
           handleKeyPress={handleKeyPress}
           clickSuggestedPrompt={clickSuggestedPrompt}
           chatEndRef={chatEndRef}
+          indexedDocsCount={indexedDocs.length}
+          openKnowledgeBase={() => setShowKnowledgeBase(true)}
         />
       </main>
+
+      {showKnowledgeBase && (
+        <KnowledgeBase 
+          onClose={() => setShowKnowledgeBase(false)}
+          fileInputRef={fileInputRef}
+          uploading={uploading}
+          uploadStatus={uploadStatus}
+          uploadProgress={uploadProgress}
+          indexedDocs={indexedDocs}
+          handleDeleteDocument={handleDeleteDocument}
+        />
+      )}
+
+      <SettingsPanel
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        chunkSize={chunkSize}
+        setChunkSize={setChunkSize}
+        chunkOverlap={chunkOverlap}
+        setChunkOverlap={setChunkOverlap}
+        docsToRetrieve={docsToRetrieve}
+        setDocsToRetrieve={setDocsToRetrieve}
+        temperature={temperature}
+        setTemperature={setTemperature}
+      />
     </div>
   );
 }

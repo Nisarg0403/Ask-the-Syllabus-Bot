@@ -3,6 +3,7 @@ from typing import List, Generator, Optional
 from langchain_community.vectorstores import FAISS
 from langchain_core.documents import Document
 from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.output_parsers import StrOutputParser
 
 from app.core.config import FAISS_DIR
 from app.rag.embeddings import get_embeddings
@@ -50,7 +51,7 @@ Context:
     ])
 
     llm = get_llm(llm_provider, model_name, api_key, temperature)
-    chain = prompt | llm
+    chain = prompt | llm | StrOutputParser()
 
     for chunk in chain.stream({"context": context_str, "question": query}):
-        yield chunk.content
+        yield chunk
